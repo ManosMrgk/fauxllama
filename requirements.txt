@@ -1,0 +1,11 @@
+flask
+cryptography
+psycopg2-binary
+cachetools
+flask_limiter
+flask-admin
+flask-sqlalchemy
+flask-login
+flask-migrate
+python-dotenv
+requests

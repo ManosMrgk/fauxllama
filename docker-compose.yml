@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    restart: always
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-azure-ai.sql:/docker-entrypoint-initdb.d/init-azure-ai.sql:ro
+
+  api:
+    build: .
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      FLASK_APP: server.py
+      FLASK_RUN_PORT: 11434
+      # For production, set FLASK_ENV=production
+    ports:
+      - "11434:11434"
+    command: >
+      sh -c "
+        /wait-for-it.sh db:5432 --timeout=60 --strict -- \
+        flask db upgrade &&
+        python server.py
+      "
+    volumes:
+      - .:/app
+
+volumes:
+  pg_data:
