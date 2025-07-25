@@ -9,3 +9,7 @@ flask-login
 flask-migrate
 python-dotenv
 requests
+redis
+gunicorn
+gevent>=1.4
+setuptools<81

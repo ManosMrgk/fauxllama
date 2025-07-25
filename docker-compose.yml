@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:16
@@ -14,15 +12,20 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./init-azure-ai.sql:/docker-entrypoint-initdb.d/init-azure-ai.sql:ro
-
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
   api:
     build: .
     depends_on:
       - db
     env_file: .env
     environment:
-      FLASK_APP: server.py
+      FLASK_APP: run.py
       FLASK_RUN_PORT: 11434
+      RATELIMIT_STORAGE_URL: redis://redis:6379
       # For production, set FLASK_ENV=production
     ports:
       - "11434:11434"
@@ -30,7 +33,7 @@ services:
       sh -c "
         /wait-for-it.sh db:5432 --timeout=60 --strict -- \
         flask db upgrade &&
-        python server.py
+        gunicorn -b 0.0.0.0:11434 run:app --worker-class gevent --workers 4
       "
     volumes:
       - .:/app
