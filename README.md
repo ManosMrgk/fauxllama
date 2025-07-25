@@ -22,13 +22,29 @@
 ## 📦 Project Structure
 ```
 fauxllama/
-├── server.py # Main Flask API server
-├── requirements.txt # Python dependencies
-├── Dockerfile # Backend container
-├── docker-compose.yml # App + PostgreSQL orchestration
-├── .env.example # Environment variable template
-├── migrations/ # Flask-Migrate migration scripts
-└── README.md
+├── server.py                      # Main Flask API server (entry point)
+├── requirements.txt               # Python dependencies
+├── Dockerfile                    # Backend container
+├── docker-compose.yml             # App + PostgreSQL orchestration
+├── .env.example                  # Environment variable template
+├── migrations/                   # Flask-Migrate migration scripts
+
+├── app/                         # Application package
+│   ├── __init__.py              # Flask app factory & extensions initialization
+│   ├── models.py                # SQLAlchemy models
+│   ├── views/                   # Flask route handlers
+│   │   ├── __init__.py
+│   │   ├── api.py               # API endpoints
+│   │   └── admin.py             # Flask-Admin setup & views
+│   ├── utils/                   # Helper utilities
+│   │   ├── __init__.py
+│   │   ├── auth.py              # Auth (API key + HTTP Basic Auth)
+│   │   ├── azure_openai.py      # Azure OpenAI integration helpers
+│   │   ├── db_helpers.py        # DB helper functions (logging etc.)
+│   │   └── limiter.py           # Rate limiting config
+│   └── extensions.py            # Flask extensions (db, migrate, limiter, admin)
+│
+└── README.md                    
 ```
 
 ---
