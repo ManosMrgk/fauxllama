@@ -69,7 +69,7 @@ By configuring VS Code like so:
 
 1. Clone the repo
 ```bash
-git clone https://github.com/your-org/fauxllama.git
+git clone https://github.com/ManosMrgk/fauxllama.git
 cd fauxllama
 ```
 2. Create your environment config
