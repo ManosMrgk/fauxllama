@@ -1,25 +1,25 @@
 # 🦙 fauxllama
 
-**fauxllama** is a drop-in Ollama-compatible API server designed to simulate a local `Ollama` instance for GitHub Copilot Chat integrations. It allows developers to bring their own model backend — including Azure OpenAI, RAG pipelines, or finetuned models — and seamlessly use them in **Visual Studio Code** through the `byok.ollamaEndpoint` setting.
+**fauxllama** is a drop-in Ollama-compatible API server designed to simulate a local `Ollama` instance for GitHub Copilot Chat integrations. It allows developers to bring their own model backend including Azure OpenAI, RAG pipelines, or finetuned models and seamlessly use them in **Visual Studio Code** through the `byok.ollamaEndpoint` setting.
 
-> TL;DR: fauxllama tricks VS Code into thinking it's talking to Ollama — but it's actually your own custom backend.
-
----
-
-## ✨ Features
-
-- ✅ **Ollama-compatible API** for Copilot Chat BYOK (`byok.ollamaEndpoint`)
-- 🔐 **API Key Management** with per-user access control
-- 💬 **Chat Logging** for dataset generation and training
-- 🔁 **Streaming Responses** via Azure OpenAI-compatible completions
-- 🧠 **Model Metadata Simulation** (e.g., family, quantization, digest)
-- 📈 **Admin Panel** with basic auth to manage API keys
-- 🐘 PostgreSQL-backed, with Flask-Migrate for schema control
-- 🐳 Ready to deploy via `docker-compose`
+> TL;DR: fauxllama tricks VS Code into thinking it's talking to Ollama - but it's actually your own custom backend.
 
 ---
 
-## 🚀 Use Case
+## Features
+
+- **Ollama-compatible API** for Copilot Chat BYOK (`byok.ollamaEndpoint`)
+-  **API Key Management** with per-user access control
+-  **Chat Logging** for dataset generation and training
+-  **Streaming Responses** via Azure OpenAI-compatible completions
+-  **Model Metadata Simulation** (e.g., family, quantization, digest)
+-  **Admin Panel** with basic auth to manage API keys
+-  PostgreSQL-backed, with Flask-Migrate for schema control
+-  Ready to deploy via `docker-compose`
+
+---
+
+## Use Case
 
 The main use case is enabling **Copilot Chat** in VS Code to interact with your **own model infrastructure**, such as:
 
@@ -35,7 +35,7 @@ By configuring VS Code like so:
 
 ---
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 1. Clone the repo
 ```bash
@@ -56,7 +56,7 @@ http://localhost:11434
 
 ---
 
-## 🔑 API Key Management
+## API Key Management
 To create and manage API keys:
 
 Visit the admin panel at:
@@ -70,7 +70,7 @@ Each key maps to a user and is required for accessing chat endpoints.
 
 ---
 
-## 📡 API Overview
+## API Overview
 All requests must include a valid API_KEY in the URL path:
 
 ```bash
@@ -79,7 +79,7 @@ POST /<API_KEY>/v1/chat/completions
 
 ---
 
-## 🖥 VS Code Integration
+## VS Code Integration
 To use fauxllama as your GitHub Copilot Chat backend:
 
 1. Open VS Code settings.json
@@ -94,4 +94,4 @@ To use fauxllama as your GitHub Copilot Chat backend:
 Now, Copilot Chat will route requests through fauxllama.
 
 ---
-**fauxllama** – Not a real llama. Just your LLM in disguise. 🦙
+**fauxllama** - Not a real llama. Just your LLM in disguise. 🦙
