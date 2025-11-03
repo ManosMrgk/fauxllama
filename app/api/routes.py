@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request, Response, stream_with_context
 from app.utils.auth import authenticate_api_key
 from app.utils.api_helpers import filter_user_model_messages
-from app.services.openai_service import call_azure_openai
+from app.services.llm.registry import auto_register_llm_from_env, active_provider
+from app.services.chat_streamer import stream_events_as_sse
 from app.services.chat_logger import log_chat_message, log_conversation
 import uuid
 import json
@@ -15,6 +16,7 @@ logging.basicConfig(
 )
 
 api_bp = Blueprint('api', __name__)
+auto_register_llm_from_env()
 
 @api_bp.before_app_request
 def log_request_info():
@@ -45,7 +47,6 @@ def api_models_tags(api_key):
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 
-    # Model info example
     model_info = {
         "models": [{
             "name": username,
@@ -110,66 +111,69 @@ def api_chat_completions(api_key):
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 
-    # Parse request
     request_json = request.get_json(force=True)
+
+    allowed_keys = {
+        "temperature","top_p","n","presence_penalty","frequency_penalty",
+        "max_tokens","stop","logit_bias","seed","tools","tool_choice",
+        "response_format","stream_options","modalities","audio","vision"
+    }
+
+    params = {k: v for k, v in request_json.items() if k in allowed_keys and v is not None}
     messages = request_json['messages']
     chat_messages = filter_user_model_messages(messages)
     conv_id = str(uuid.uuid4())
     model = request_json.get('model', 'unknown')
+    client = active_provider()
 
-    # Log user messages
     log_conversation([chat_messages[-1]], conv_id, username, model, apikey_id)
-    # Call Azure OpenAI model
+
     def event_stream():
-        assistant_reply = ""  # Collect full response
+        assistant_reply_parts = []
         try:
-            for raw_line in call_azure_openai(chat_messages):
-                # Azure streams as: data: {...}
-                if raw_line.startswith("data: "):
-                    data_json = raw_line[len("data: "):].strip()
-                    if data_json == "[DONE]":
-                        yield "data: [DONE]\n\n"
-                        break
-                    try:
-                        data_obj = json.loads(data_json)
-                        # Collect text for logging
-                        delta = data_obj.get("choices", [{}])[0].get("delta", {})
-                        if "content" in delta:
-                            assistant_reply += delta["content"]
-                    except Exception:
-                        pass  # If the chunk isn't valid JSON, skip collecting
-                    yield raw_line + "\n\n"  # Forward as-is to client
+            for ev in client.stream_chat(chat_messages, params=params, request_id=conv_id):
+                try:
+                    delta = ev.get("choices", [{}])[0].get("delta", {})
+                    if "content" in delta:
+                        assistant_reply_parts.append(delta["content"])
+                except Exception:
+                    pass
+
+                for chunk in stream_events_as_sse([ev]):
+                    yield chunk
+
 
         except Exception as e:
-            # Yield a structured error message to the client
-            error_msg = {
-                "error": "Upstream error",
-                "detail": str(e)
-            }
-            yield f"data: {json.dumps(error_msg)}\n\n"
+            error_msg = {"error": str(e), "detail": str(e)}
+            for chunk in stream_events_as_sse([error_msg]):
+                yield chunk
 
         finally:
-            # After streaming (even if error), log the assistant reply (could be empty)
-            log_chat_message(
-                conv_id=conv_id,
-                order=len(chat_messages),
-                role='model',
-                text=assistant_reply,
-                username=username,
-                model=model,
-                apikey_id=apikey_id
-            )
+            # yield "data: [DONE]\n\n"
+            # After streaming, log the full reply
+            try:
+                log_chat_message(
+                    conv_id=conv_id,
+                    order=len(chat_messages),
+                    role='model',
+                    text="".join(assistant_reply_parts),
+                    username=username,
+                    model=model,
+                    apikey_id=apikey_id
+                )
+            except Exception:
+                logging.exception("Failed to log chat message")
 
-    return Response(stream_with_context(event_stream()), mimetype='text/event-stream', headers={
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-    })
+    return Response(
+        stream_with_context(event_stream()),
+        mimetype='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'Connection': 'keep-alive'}
+    )
 
 @api_bp.route('/health', methods=['GET'])
 def health():
     return jsonify({"status": "ok"}), 200
 
-# --- Fallback for 404 ---
 @api_bp.errorhandler(404)
 def not_found(e):
     return jsonify({"error": "Not found"}), 404

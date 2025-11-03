@@ -8,8 +8,6 @@ from functools import wraps
 from app.models import APIKey
 from app.extensions import db
 
-# --- Basic HTTP Auth for Admin Panel ---
-
 def check_auth(username, password):
     return username == 'admin' and password == os.environ.get('ADMIN_PASSWORD')
 
@@ -24,8 +22,6 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
-
-# --- Admin Views ---
 
 class MyAdminIndexView(AdminIndexView):
     @requires_auth
@@ -65,7 +61,6 @@ class AuthModelView(ModelView):
     def _handle_view(self, name, **kwargs):
         return super()._handle_view(name, **kwargs)
 
-# --- Admin Setup Function ---
 
 def setup_admin(app):
     admin = Admin(app, name='Admin Panel', template_mode='bootstrap4', index_view=MyAdminIndexView())

@@ -1,7 +1,7 @@
 from flask import Flask
 from .extensions import db, migrate, limiter
-from .models import *  # Import models so Alembic sees them
-from .views import register_blueprints
+from .models import *
+from .api import register_blueprints
 from dotenv import load_dotenv
 import os
 

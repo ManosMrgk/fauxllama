@@ -1,5 +1,5 @@
 from .admin import setup_admin
-from .api import api_bp
+from .routes import api_bp
 
 def register_blueprints(app):
     # Register API blueprint
